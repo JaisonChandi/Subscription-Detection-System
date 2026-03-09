@@ -23,8 +23,19 @@
 # Logs and databases #
 ######################
 *.log
-*.sql
 *.sqlite
+
+# Environment files #
+#####################
+.env
+
+# Node modules #
+################
+node_modules/
+
+# React build #
+###############
+frontend/build/
 
 # OS generated files #
 ######################

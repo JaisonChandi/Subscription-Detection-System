@@ -1,0 +1,5 @@
+ id |  name   | category  | cost  | billing_cycle | start_date | renewal_date | status |     description      |          created_at           |          updated_at           
+----+---------+-----------+-------+---------------+------------+--------------+--------+----------------------+-------------------------------+-------------------------------
+  1 | Netflix | Streaming | 14.00 | Monthly       | 2026-03-05 | 2026-03-05   | Active | Netflix Subscription | 2026-03-05 17:52:48.914472+00 | 2026-03-05 17:52:48.914472+00
+(1 row)
+
