@@ -1,5 +1,6 @@
 # 🔔 Subscription Detection System
 
+<<<<<<< HEAD
 A full-stack web application that helps users track and manage all their ongoing app and service subscriptions in one place.
 
 ## Tech Stack
@@ -80,12 +81,24 @@ Notes:
 - The Compose setup uses `postgres/postgres` for username/password and creates `subscription_db` automatically.
 - `backend/db/schema.sql` is applied automatically on first startup of a fresh DB volume.
 - If you need to re-run initialization from scratch:
+=======
+<img src="https://octodex.github.com/images/Professortocat_v2.png" align="right" height="200px" />
+
+Hey JaisonChandi!
+
+Mona here. I'm done preparing your exercise. Hope you enjoy! 💚
+
+Remember, it's self-paced so feel free to take a break! ☕️
+
+[![](https://img.shields.io/badge/Go%20to%20Exercise-%E2%86%92-1f883d?style=for-the-badge&logo=github&labelColor=197935)](https://github.com/JaisonChandi/skills-introduction-to-github/issues/2)
+ main
 
 ```bash
 docker compose down -v
 docker compose up -d db
 ```
 
+<<<<<<< HEAD
 ### 2. Backend
 
 ```bash
@@ -152,3 +165,7 @@ npm start                   # Starts on http://localhost:3000
 ## License
 
 [MIT](LICENSE)
+
+&copy; 2025 GitHub &bull; [Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/code_of_conduct.md) &bull; [MIT License](https://gh.io/mit)
+
+ main
