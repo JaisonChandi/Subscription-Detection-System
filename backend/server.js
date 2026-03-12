@@ -5,7 +5,6 @@ const rateLimit = require('express-rate-limit');
 const subscriptionsRouter = require('./routes/subscriptions');
 
 const app = express();
-app.set('trust proxy', true);
 const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
@@ -16,6 +15,8 @@ const limiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
+  // Use default key generator (req.ip) without trust proxy for local dev
+  validate: { trustProxy: false },
 });
 app.use('/api/', limiter);
 
