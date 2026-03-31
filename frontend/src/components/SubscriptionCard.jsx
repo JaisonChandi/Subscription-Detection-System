@@ -1,9 +1,9 @@
 import React from 'react';
 
 const STATUS_COLORS = {
-  Active: '#22c55e',
-  Paused: '#f59e0b',
-  Cancelled: '#ef4444',
+  Active: 'sub-card__status--active',
+  Paused: 'sub-card__status--paused',
+  Cancelled: 'sub-card__status--cancelled',
 };
 
 const CATEGORY_ICONS = {
@@ -26,48 +26,72 @@ function daysUntil(dateStr) {
   return Math.round((target - now) / (1000 * 60 * 60 * 24));
 }
 
-function SubscriptionCard({ subscription, onEdit, onDelete }) {
+function SubscriptionCard({ subscription, onEdit, onDelete, index = 0 }) {
   const { id, name, category, cost, billing_cycle, renewal_date, status, description } = subscription;
   const days = daysUntil(renewal_date);
+  const isUrgent = days <= 7 && status === 'Active';
+
   const renewalLabel =
     days < 0 ? `Overdue by ${Math.abs(days)} day(s)` :
     days === 0 ? 'Renews today!' :
     `Renews in ${days} day(s)`;
 
   return (
-    <div className={`sub-card ${days <= 7 && status === 'Active' ? 'sub-card--urgent' : ''}`}>
+    <div
+      className={`sub-card ${isUrgent ? 'sub-card--urgent' : ''}`}
+      style={{ animationDelay: `${index * 0.06}s` }}
+    >
+      {/* Header */}
       <div className="sub-card__header">
-        <span className="sub-card__icon">{CATEGORY_ICONS[category] || '📦'}</span>
+        <span className="sub-card__icon">
+          {CATEGORY_ICONS[category] || '📦'}
+        </span>
         <div className="sub-card__title-block">
           <h3 className="sub-card__name">{name}</h3>
           <span className="sub-card__category">{category}</span>
         </div>
-        <span
-          className="sub-card__status"
-          style={{ backgroundColor: STATUS_COLORS[status] || '#6b7280' }}
-        >
+        <span className={`sub-card__status ${STATUS_COLORS[status] || ''}`}>
           {status}
         </span>
       </div>
 
+      {/* Divider */}
+      <div className="sub-card__divider" />
+
+      {/* Details */}
       <div className="sub-card__details">
         <div className="sub-card__detail">
-          <span className="label">Cost</span>
-          <span className="value">${parseFloat(cost).toFixed(2)} / {billing_cycle}</span>
+          <span className="label">
+            <span className="label-icon">💳</span> Cost
+          </span>
+          <span className="value value--cost">
+            ${parseFloat(cost).toFixed(2)}
+            <span style={{ fontSize: '0.75rem', opacity: 0.7, fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
+              {' '}/ {billing_cycle}
+            </span>
+          </span>
         </div>
         <div className="sub-card__detail">
-          <span className="label">Renewal</span>
-          <span className={`value ${days <= 7 && status === 'Active' ? 'text-urgent' : ''}`}>
+          <span className="label">
+            <span className="label-icon">{isUrgent ? '⚡' : '🗓️'}</span> Renewal
+          </span>
+          <span className={`value ${isUrgent ? 'text-urgent' : ''}`}>
             {renewalLabel}
           </span>
         </div>
       </div>
 
+      {/* Description */}
       {description && <p className="sub-card__desc">{description}</p>}
 
+      {/* Actions */}
       <div className="sub-card__actions">
-        <button className="btn btn-sm btn-secondary" onClick={() => onEdit(subscription)}>Edit</button>
-        <button className="btn btn-sm btn-danger" onClick={() => onDelete(id)}>Delete</button>
+        <button className="btn btn-sm btn-secondary" onClick={() => onEdit(subscription)}>
+          ✏️ Edit
+        </button>
+        <button className="btn btn-sm btn-danger" onClick={() => onDelete(id)}>
+          🗑️ Delete
+        </button>
       </div>
     </div>
   );
