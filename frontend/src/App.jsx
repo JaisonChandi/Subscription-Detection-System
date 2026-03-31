@@ -74,50 +74,75 @@ function App() {
 
   const filtered = filter === 'All' ? subscriptions : subscriptions.filter((s) => s.status === filter);
   const monthly = totalMonthlyCost(subscriptions);
+  const activeCount = subscriptions.filter((s) => s.status === 'Active').length;
+  const pausedCount = subscriptions.filter((s) => s.status === 'Paused').length;
+  const cancelledCount = subscriptions.filter((s) => s.status === 'Cancelled').length;
+
+  const filterCounts = {
+    All: subscriptions.length,
+    Active: activeCount,
+    Paused: pausedCount,
+    Cancelled: cancelledCount,
+  };
 
   return (
     <div className="app">
+      {/* ─── Header ─── */}
       <header className="app-header">
         <div className="app-header__inner">
           <div className="app-header__brand">
             <span className="app-header__logo">🔔</span>
-            <h1>Subscription Detection System</h1>
+            <div>
+              <h1>SubSync</h1>
+              <span className="app-header__subtitle">Subscription Detection System</span>
+            </div>
           </div>
-          <button className="btn btn-primary" onClick={handleAdd}>+ Add Subscription</button>
+          <button className="btn-add" onClick={handleAdd}>
+            <span className="btn-add__icon">+</span>
+            <span>Add Subscription</span>
+          </button>
         </div>
       </header>
 
+      {/* ─── Main Content ─── */}
       <main className="app-main">
+        {/* Error Alert */}
         {error && (
           <div className="alert alert-error">
-            {error}
+            <span>⚠️ {error}</span>
             <button className="alert__close" onClick={() => setError('')}>✕</button>
           </div>
         )}
 
+        {/* Stats Cards */}
         <div className="stats-bar">
           <div className="stat-card">
+            <span className="stat-card__icon">📊</span>
             <span className="stat-card__label">Total Subscriptions</span>
             <span className="stat-card__value">{subscriptions.length}</span>
           </div>
           <div className="stat-card">
+            <span className="stat-card__icon">✅</span>
             <span className="stat-card__label">Active</span>
-            <span className="stat-card__value">{subscriptions.filter((s) => s.status === 'Active').length}</span>
+            <span className="stat-card__value">{activeCount}</span>
           </div>
           <div className="stat-card">
+            <span className="stat-card__icon">💰</span>
             <span className="stat-card__label">Monthly Spend</span>
             <span className="stat-card__value">${monthly.toFixed(2)}</span>
           </div>
           <div className="stat-card">
+            <span className="stat-card__icon">📅</span>
             <span className="stat-card__label">Annual Spend</span>
             <span className="stat-card__value">${(monthly * 12).toFixed(2)}</span>
           </div>
         </div>
 
+        {/* Modal */}
         {showForm && (
-          <div className="modal-overlay">
+          <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && handleCancel()}>
             <div className="modal">
-              <h2>{editing ? 'Edit Subscription' : 'Add Subscription'}</h2>
+              <h2>{editing ? '✏️ Edit Subscription' : '✨ New Subscription'}</h2>
               <SubscriptionForm
                 initial={editing || {}}
                 onSubmit={handleSubmit}
@@ -127,6 +152,8 @@ function App() {
           </div>
         )}
 
+        {/* Filter Tabs */}
+        <h3 className="section-title">Your Subscriptions</h3>
         <div className="filter-bar">
           {['All', 'Active', 'Paused', 'Cancelled'].map((f) => (
             <button
@@ -135,10 +162,12 @@ function App() {
               onClick={() => setFilter(f)}
             >
               {f}
+              <span className="filter-btn__count">{filterCounts[f]}</span>
             </button>
           ))}
         </div>
 
+        {/* Subscription List */}
         <SubscriptionList
           subscriptions={filtered}
           onEdit={handleEdit}
@@ -146,6 +175,11 @@ function App() {
           loading={loading}
         />
       </main>
+
+      {/* ─── Footer ─── */}
+      <footer className="app-footer">
+        SubSync — Subscription Detection System &middot; Built with React & PostgreSQL
+      </footer>
     </div>
   );
 }
