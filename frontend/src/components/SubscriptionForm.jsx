@@ -2,7 +2,7 @@ import React from 'react';
 
 const CATEGORIES = ['Streaming', 'Music', 'Gaming', 'Productivity', 'Cloud Storage', 'News', 'Fitness', 'Education', 'Other'];
 const BILLING_CYCLES = ['Monthly', 'Quarterly', 'Yearly'];
-const STATUSES = ['Active', 'Paused', 'Cancelled'];
+const STATUSES = ['Active', 'Paused', 'Cancelled', 'Expired'];
 
 const CATEGORY_ICONS = {
   Streaming: '🎬',
@@ -84,7 +84,7 @@ function SubscriptionForm({ initial = {}, onSubmit, onCancel }) {
 
       <div className="form-row--grid">
         <div className="form-row">
-          <label>Cost ($)</label>
+          <label>Cost (₹)</label>
           <input
             name="cost"
             type="number"

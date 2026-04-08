@@ -1,9 +1,10 @@
 import React from 'react';
 
 const STATUS_COLORS = {
-  Active: 'sub-card__status--active',
-  Paused: 'sub-card__status--paused',
+  Active:    'sub-card__status--active',
+  Paused:    'sub-card__status--paused',
   Cancelled: 'sub-card__status--cancelled',
+  Expired:   'sub-card__status--expired',
 };
 
 const CATEGORY_ICONS = {
@@ -65,7 +66,7 @@ function SubscriptionCard({ subscription, onEdit, onDelete, index = 0 }) {
             <span className="label-icon">💳</span> Cost
           </span>
           <span className="value value--cost">
-            ${parseFloat(cost).toFixed(2)}
+            ₹{parseFloat(cost).toFixed(2)}
             <span style={{ fontSize: '0.75rem', opacity: 0.7, fontFamily: 'var(--font-sans)', fontWeight: 500 }}>
               {' '}/ {billing_cycle}
             </span>
