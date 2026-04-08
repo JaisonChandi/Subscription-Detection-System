@@ -2,11 +2,35 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 
-// GET all subscriptions
+// GET all subscriptions (for the authenticated user)
+// Auto-classifies status based on renewal_date:
+//   Active    → renewal_date >= today
+//   Paused    → renewal_date is 1–90 days overdue
+//   Expired   → renewal_date is 90+ days overdue
+//   Cancelled → kept as-is (user explicitly set it)
 router.get('/', async (req, res) => {
   try {
+    // Step 1: Auto-update statuses in DB (skip Cancelled — those are intentional)
+    await pool.query(
+      `UPDATE subscriptions
+       SET status = CASE
+         WHEN renewal_date >= CURRENT_DATE
+           THEN 'Active'
+         WHEN renewal_date < CURRENT_DATE AND (CURRENT_DATE - renewal_date) <= 90
+           THEN 'Paused'
+         WHEN renewal_date < CURRENT_DATE AND (CURRENT_DATE - renewal_date) > 90
+           THEN 'Expired'
+         ELSE status
+       END
+       WHERE user_id = $1
+         AND status <> 'Cancelled'`,
+      [req.user.id]
+    );
+
+    // Step 2: Return updated subscriptions
     const result = await pool.query(
-      'SELECT * FROM subscriptions ORDER BY renewal_date ASC'
+      'SELECT * FROM subscriptions WHERE user_id = $1 ORDER BY renewal_date ASC',
+      [req.user.id]
     );
     res.json(result.rows);
   } catch (err) {
@@ -20,8 +44,8 @@ router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      'SELECT * FROM subscriptions WHERE id = $1',
-      [id]
+      'SELECT * FROM subscriptions WHERE id = $1 AND user_id = $2',
+      [id, req.user.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Subscription not found' });
@@ -41,8 +65,8 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'name, start_date and renewal_date are required' });
     }
     const result = await pool.query(
-      `INSERT INTO subscriptions (name, category, cost, billing_cycle, start_date, renewal_date, status, description)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO subscriptions (name, category, cost, billing_cycle, start_date, renewal_date, status, description, user_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
       [
         name,
@@ -53,6 +77,7 @@ router.post('/', async (req, res) => {
         renewal_date,
         status || 'Active',
         description || null,
+        req.user.id,
       ]
     );
     res.status(201).json(result.rows[0]);
@@ -77,9 +102,9 @@ router.put('/:id', async (req, res) => {
            renewal_date = COALESCE($6, renewal_date),
            status = COALESCE($7, status),
            description = COALESCE($8, description)
-       WHERE id = $9
+       WHERE id = $9 AND user_id = $10
        RETURNING *`,
-      [name, category, cost, billing_cycle, start_date, renewal_date, status, description, id]
+      [name, category, cost, billing_cycle, start_date, renewal_date, status, description, id, req.user.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Subscription not found' });
@@ -96,8 +121,8 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      'DELETE FROM subscriptions WHERE id = $1 RETURNING *',
-      [id]
+      'DELETE FROM subscriptions WHERE id = $1 AND user_id = $2 RETURNING *',
+      [id, req.user.id]
     );
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Subscription not found' });

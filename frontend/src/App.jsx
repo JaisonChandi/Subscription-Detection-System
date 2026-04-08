@@ -1,4 +1,8 @@
 import React from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginPage from './components/LoginPage';
+import SignupPage from './components/SignupPage';
+import VerifyEmail from './components/VerifyEmail';
 import SubscriptionList from './components/SubscriptionList';
 import SubscriptionForm from './components/SubscriptionForm';
 import {
@@ -7,8 +11,23 @@ import {
   updateSubscription,
   deleteSubscription,
 } from './services/api';
+import EmailScanModal from './components/EmailScanModal';
 import './index.css';
 
+// ─── Simple hash-based router ───────────────────────────────
+function useHashRoute() {
+  const [route, setRoute] = React.useState(window.location.hash || '#/login');
+
+  React.useEffect(() => {
+    const onHash = () => setRoute(window.location.hash || '#/login');
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  return route;
+}
+
+// ─── Dashboard (the existing app content) ───────────────────
 function totalMonthlyCost(subscriptions) {
   return subscriptions
     .filter((s) => s.status === 'Active')
@@ -20,13 +39,15 @@ function totalMonthlyCost(subscriptions) {
     }, 0);
 }
 
-function App() {
+function Dashboard() {
+  const { user, logout } = useAuth();
   const [subscriptions, setSubscriptions] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
   const [showForm, setShowForm] = React.useState(false);
   const [editing, setEditing] = React.useState(null);
   const [filter, setFilter] = React.useState('All');
+  const [showEmailScan, setShowEmailScan] = React.useState(false);
 
   const load = React.useCallback(async () => {
     setLoading(true);
@@ -74,15 +95,17 @@ function App() {
 
   const filtered = filter === 'All' ? subscriptions : subscriptions.filter((s) => s.status === filter);
   const monthly = totalMonthlyCost(subscriptions);
-  const activeCount = subscriptions.filter((s) => s.status === 'Active').length;
-  const pausedCount = subscriptions.filter((s) => s.status === 'Paused').length;
+  const activeCount    = subscriptions.filter((s) => s.status === 'Active').length;
+  const pausedCount    = subscriptions.filter((s) => s.status === 'Paused').length;
   const cancelledCount = subscriptions.filter((s) => s.status === 'Cancelled').length;
+  const expiredCount   = subscriptions.filter((s) => s.status === 'Expired').length;
 
   const filterCounts = {
     All: subscriptions.length,
     Active: activeCount,
     Paused: pausedCount,
     Cancelled: cancelledCount,
+    Expired: expiredCount,
   };
 
   return (
@@ -97,10 +120,27 @@ function App() {
               <span className="app-header__subtitle">Subscription Detection System</span>
             </div>
           </div>
-          <button className="btn-add" onClick={handleAdd}>
-            <span className="btn-add__icon">+</span>
-            <span>Add Subscription</span>
-          </button>
+          <div className="app-header__actions">
+            <button className="btn-scan-email" onClick={() => setShowEmailScan(true)}>
+              <span>📧</span>
+              <span>Scan Email</span>
+            </button>
+            <button className="btn-add" onClick={handleAdd}>
+              <span className="btn-add__icon">+</span>
+              <span>Add Subscription</span>
+            </button>
+            <div className="user-menu">
+              <button className="user-menu__btn">
+                <span className="user-menu__avatar">
+                  {user?.full_name?.charAt(0)?.toUpperCase() || '?'}
+                </span>
+                <span className="user-menu__name">{user?.full_name || 'User'}</span>
+              </button>
+              <button className="btn-logout" onClick={logout} title="Sign Out">
+                🚪 Logout
+              </button>
+            </div>
+          </div>
         </div>
       </header>
 
@@ -129,14 +169,22 @@ function App() {
           <div className="stat-card">
             <span className="stat-card__icon">💰</span>
             <span className="stat-card__label">Monthly Spend</span>
-            <span className="stat-card__value">${monthly.toFixed(2)}</span>
+            <span className="stat-card__value">₹{monthly.toFixed(2)}</span>
           </div>
           <div className="stat-card">
             <span className="stat-card__icon">📅</span>
             <span className="stat-card__label">Annual Spend</span>
-            <span className="stat-card__value">${(monthly * 12).toFixed(2)}</span>
+            <span className="stat-card__value">₹{(monthly * 12).toFixed(2)}</span>
           </div>
         </div>
+
+        {/* Email Scan Modal */}
+        {showEmailScan && (
+          <EmailScanModal
+            onClose={() => setShowEmailScan(false)}
+            onImported={() => { setShowEmailScan(false); load(); }}
+          />
+        )}
 
         {/* Modal */}
         {showForm && (
@@ -155,7 +203,7 @@ function App() {
         {/* Filter Tabs */}
         <h3 className="section-title">Your Subscriptions</h3>
         <div className="filter-bar">
-          {['All', 'Active', 'Paused', 'Cancelled'].map((f) => (
+          {['All', 'Active', 'Paused', 'Cancelled', 'Expired'].map((f) => (
             <button
               key={f}
               className={`filter-btn ${filter === f ? 'filter-btn--active' : ''}`}
@@ -181,6 +229,55 @@ function App() {
         SubSync — Subscription Detection System &middot; Built with React & PostgreSQL
       </footer>
     </div>
+  );
+}
+
+// ─── App Router ─────────────────────────────────────────────
+function AppRouter() {
+  const { isAuthenticated, loading } = useAuth();
+  const route = useHashRoute();
+
+  // Show loading spinner while checking auth
+  if (loading) {
+    return (
+      <div className="auth-page">
+        <div className="auth-loading">
+          <div className="auth-loading__spinner"></div>
+          <p>Loading SubSync...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Route: email verification (accessible without auth)
+  if (route.startsWith('#/verify-email/')) {
+    return <VerifyEmail />;
+  }
+
+  // Authenticated routes
+  if (isAuthenticated) {
+    // Redirect to dashboard if trying to access login/signup
+    if (route === '#/login' || route === '#/signup' || route === '') {
+      window.location.hash = '#/dashboard';
+      return null;
+    }
+    return <Dashboard />;
+  }
+
+  // Not authenticated
+  if (route === '#/signup') return <SignupPage />;
+  
+  // Default: login
+  if (route !== '#/login') window.location.hash = '#/login';
+  return <LoginPage />;
+}
+
+// ─── Root App ───────────────────────────────────────────────
+function App() {
+  return (
+    <AuthProvider>
+      <AppRouter />
+    </AuthProvider>
   );
 }
 
