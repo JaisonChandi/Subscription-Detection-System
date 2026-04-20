@@ -12,6 +12,10 @@ const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+
+// Trust proxy (needed for express-rate-limit when behind a dev proxy)
+app.set('trust proxy', 1);
+
 app.use(cors());
 app.use(express.json());
 
@@ -21,7 +25,6 @@ const limiter = rateLimit({
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  validate: { trustProxy: false },
 });
 app.use('/api/', limiter);
 

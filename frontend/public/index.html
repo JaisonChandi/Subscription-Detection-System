@@ -1,18 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" translate="no">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="google" content="notranslate" />
     <meta name="description" content="Track and manage all your app and service subscriptions in one place. Smart alerts, cost analytics, and renewal tracking." />
     <meta name="theme-color" content="#0f0a1e" />
     <title>SubSync — Subscription Detection System</title>
+    <!--
+      IMPORTANT: This inline script MUST run before any webpack bundle loads.
+      It suppresses errors from Chrome extensions (e.g. Google Translate) that
+      trigger the react-error-overlay in development mode.
+    -->
+    <script>
+      (function() {
+        // 1. Capture-phase listeners to block extension errors before react-error-overlay sees them
+        window.addEventListener('error', function(event) {
+          if (event.filename && event.filename.indexOf('chrome-extension://') === 0) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+            return false;
+          }
+        }, true);
+
+        window.addEventListener('unhandledrejection', function(event) {
+          var reason = event.reason;
+          if (reason) {
+            var stack = reason.stack || '';
+            var msg = reason.message || '';
+            if (stack.indexOf('chrome-extension://') !== -1 ||
+                msg.indexOf('Timeout waiting for response') !== -1) {
+              event.stopImmediatePropagation();
+              event.preventDefault();
+              return false;
+            }
+          }
+        }, true);
+
+        // 2. MutationObserver fallback: auto-remove the error overlay if it still appears
+        var observer = new MutationObserver(function(mutations) {
+          mutations.forEach(function(mutation) {
+            mutation.addedNodes.forEach(function(node) {
+              if (node.nodeName === 'IFRAME' && node.id === 'webpack-dev-server-client-overlay') {
+                node.remove();
+              }
+              // react-error-overlay also uses a div container
+              if (node.nodeName === 'DIV' && node.style && node.style.position === 'fixed') {
+                var text = node.textContent || '';
+                if (text.indexOf('chrome-extension://') !== -1 ||
+                    text.indexOf('Timeout waiting for response') !== -1) {
+                  node.remove();
+                }
+              }
+            });
+          });
+        });
+        observer.observe(document.documentElement, { childList: true, subtree: true });
+      })();
+    </script>
     <link rel="icon" href="assets/logo.jpeg">
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
   </head>
-  <body>
+  <body translate="no">
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
   </body>

@@ -4,6 +4,9 @@
 #  One script to rule them all 🚀
 # ════════════════════════════════════════════════════════════════
 
+# Ensure common paths are in the PATH
+export PATH=$PATH:/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
+
 # Auto-detect project directory (works no matter where the project lives)
 PROJECT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BACKEND_PORT=5001
@@ -41,10 +44,10 @@ print_ok "Ports ${BACKEND_PORT} & ${FRONTEND_PORT} cleared"
 # ── Step 1: Check PostgreSQL ──────────────────────────────────
 print_step "Step 1 — Checking PostgreSQL"
 
-if lsof -i :5432 &>/dev/null; then
-  print_ok "PostgreSQL is running on port 5432"
+if PGPASSWORD="$DB_PASSWORD" "$PSQL_BIN" -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1" &>/dev/null; then
+  print_ok "PostgreSQL is running and accessible"
 else
-  print_warn "PostgreSQL is NOT running on port 5432"
+  print_warn "PostgreSQL is NOT responding on standard connection"
   echo "       Attempting to start via Docker..."
   if command -v docker &>/dev/null; then
     cd "$PROJECT_DIR"
@@ -57,7 +60,8 @@ else
       sleep 1
     done
   else
-    print_fail "Docker not found. Please start PostgreSQL manually."
+    print_fail "Docker not found and local PostgreSQL connection failed."
+    print_warn "Please ensure PostgreSQL is running at localhost:5432"
     exit 1
   fi
 fi
