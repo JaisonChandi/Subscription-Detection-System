@@ -10,20 +10,17 @@ const pool = require('../db');
 //   Cancelled → kept as-is (user explicitly set it)
 router.get('/', async (req, res) => {
   try {
-    // Step 1: Auto-update statuses in DB (skip Cancelled — those are intentional)
+    // Auto-update only subscriptions NOT manually set to Paused or Cancelled.
+    // This preserves user intent: if they paused a subscription, keep it paused.
     await pool.query(
       `UPDATE subscriptions
        SET status = CASE
-         WHEN renewal_date >= CURRENT_DATE
-           THEN 'Active'
-         WHEN renewal_date < CURRENT_DATE AND (CURRENT_DATE - renewal_date) <= 90
-           THEN 'Paused'
-         WHEN renewal_date < CURRENT_DATE AND (CURRENT_DATE - renewal_date) > 90
-           THEN 'Expired'
+         WHEN renewal_date >= CURRENT_DATE                                          THEN 'Active'
+         WHEN renewal_date <  CURRENT_DATE AND (CURRENT_DATE - renewal_date) > 90  THEN 'Expired'
          ELSE status
        END
        WHERE user_id = $1
-         AND status <> 'Cancelled'`,
+         AND status NOT IN ('Paused', 'Cancelled')`,
       [req.user.id]
     );
 

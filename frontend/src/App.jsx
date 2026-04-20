@@ -80,10 +80,30 @@ function DashboardPage({ subscriptions, onEdit, onDelete, onAdd, filter, setFilt
       {/* Stats */}
       <div className="stats-grid">
         {[
-          { label:'Total Subscriptions', value: subscriptions.length,    icon:'☰',  color:'purple', delta:null },
-          { label:'Active',              value: activeCount,              icon:'●',  color:'green',  delta:`${cancelledCount} cancelled` },
-          { label:'Monthly Spend',       value:`₹${monthly.toFixed(0)}`, icon:'₹',  color:'amber',  delta:`₹${(monthly*12).toFixed(0)}/yr` },
-          { label:'Paused / Expired',    value: pausedCount + subscriptions.filter(s=>s.status==='Expired').length, icon:'⏸', color:'red', delta:null },
+          {
+            label: 'Total Subscriptions',
+            value: subscriptions.length,
+            icon: '☰', color: 'purple',
+            delta: `${activeCount} active`,
+          },
+          {
+            label: 'Active Services',
+            value: activeCount,
+            icon: '●', color: 'green',
+            delta: cancelledCount > 0 ? `${cancelledCount} cancelled` : 'All good!',
+          },
+          {
+            label: 'Monthly Spend',
+            value: `₹${monthly.toFixed(0)}`,
+            icon: '₹', color: 'amber',
+            delta: `₹${(monthly * 12).toFixed(0)} / year`,
+          },
+          {
+            label: 'Paused / Expired',
+            value: pausedCount + subscriptions.filter(s => s.status === 'Expired').length,
+            icon: '⏸', color: 'red',
+            delta: pausedCount > 0 ? `${pausedCount} paused` : 'None paused',
+          },
         ].map((card, i) => (
           <div key={i} className={`stat-card stat-card--${card.color}`} style={{ animationDelay:`${i*0.08}s` }}>
             <div className="stat-card__accent" />
