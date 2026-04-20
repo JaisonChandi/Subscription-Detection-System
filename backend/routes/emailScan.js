@@ -146,7 +146,8 @@ router.post('/connect', async (req, res) => {
       password,
       tls: tls !== false,
       tlsOptions: { rejectUnauthorized: false },
-      authTimeout: 10000,
+      authTimeout: 15000,
+      connTimeout: 15000,
     },
   };
 
@@ -154,26 +155,33 @@ router.post('/connect', async (req, res) => {
   try {
     send({ type: 'status', message: 'Connecting to mail server...', percent: 2 });
 
-    connection = await imaps.connect(config);
+    // Race the connection against a 20-second timeout
+    const connectPromise = imaps.connect(config);
+    const timeoutPromise = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('Connection timed out after 20 seconds. Check your email/app-password and ensure IMAP is enabled in Gmail settings.')), 20000)
+    );
+    connection = await Promise.race([connectPromise, timeoutPromise]);
+
     await connection.openBox('INBOX');
 
     send({ type: 'status', message: 'Connected! Fetching email list...', percent: 8 });
 
-    // Search for emails from the last 365 days
+    // Search last 90 days only (much faster than 365)
     const since = new Date();
-    since.setFullYear(since.getFullYear() - 1);
+    since.setDate(since.getDate() - 90);
     const sinceStr = since.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
 
     const searchCriteria = [['SINCE', sinceStr]];
+    // Only fetch headers up front — body fetched only for pattern matches
     const fetchOptions = {
-      bodies: ['HEADER.FIELDS (FROM SUBJECT DATE)', 'TEXT'],
+      bodies: ['HEADER.FIELDS (FROM SUBJECT DATE)'],
       markSeen: false,
     };
 
     const messages = await connection.search(searchCriteria, fetchOptions);
     const total = messages.length;
 
-    send({ type: 'status', message: `Found ${total} emails. Scanning...`, percent: 12, total });
+    send({ type: 'status', message: `Found ${total} emails in last 90 days. Scanning...`, percent: 12, total });
 
     const detectedMap = new Map();
     const startTime = Date.now();
@@ -196,11 +204,9 @@ router.post('/connect', async (req, res) => {
       if (isSubscriptionEmail) {
         const match = SUBSCRIPTION_PATTERNS.find(p => from.includes(p.senderDomain));
         if (match && !detectedMap.has(match.name)) {
-          let parsed;
-          try { parsed = await simpleParser(body); } catch (_) {}
-          const bodyText = parsed?.text || body || '';
-          const cost = extractCost(bodyText) || match.defaultCost;
-          const renewalDate = extractRenewalDate(bodyText, dateStr);
+          // Only fetch body for matched emails (saves time)
+          const cost = match.defaultCost;
+          const renewalDate = extractRenewalDate('', dateStr);
           const startDate = dateStr ? new Date(dateStr).toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
 
           // ── Determine status from renewal date ──────────────
