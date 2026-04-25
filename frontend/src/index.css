@@ -2626,9 +2626,109 @@ body::before {
 
 
 /* ══════════════════════════════════════════════════════════
-   VERIFY EMAIL PAGE  (minimal card, matches auth style)
+   VERIFY EMAIL PAGE
 ══════════════════════════════════════════════════════════ */
-.verify-page { /* inherits .auth-page */ }
+/* auth-card--verify: slightly narrower, centred content */
+.auth-card--verify {
+  max-width: 420px;
+  text-align: center;
+}
+
+/* Status container */
+.verify-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  animation: fadeUp var(--t-med) both;
+}
+
+/* Big status icon */
+.verify-status__icon {
+  font-size: 2.8rem;
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+
+.verify-status__icon--loading {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+.verify-status__icon--success {
+  animation: scaleIn var(--t-med) both;
+  filter: drop-shadow(0 0 10px rgba(45, 106, 79, 0.35));
+}
+
+.verify-status__icon--error {
+  animation: scaleIn var(--t-med) both;
+  filter: drop-shadow(0 0 10px rgba(212, 99, 74, 0.35));
+}
+
+.verify-status h2 {
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+/* Description text under status heading */
+.verify-status__text {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+/* Animated indeterminate progress bar shown during loading */
+.verify-loader {
+  width: 100%;
+  max-width: 260px;
+  height: 5px;
+  background: var(--bg-secondary);
+  border-radius: var(--r-full);
+  overflow: hidden;
+  margin-top: 0.75rem;
+}
+
+.verify-loader__bar {
+  height: 100%;
+  width: 45%;
+  border-radius: var(--r-full);
+  background: var(--gradient-accent);
+  animation: verifySlide 1.4s ease-in-out infinite;
+}
+
+@keyframes verifySlide {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(280%); }
+}
+
+/* Button row for error state (two side-by-side action buttons) */
+.verify-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 1.25rem;
+}
+
+/* Secondary/ghost variant of auth-btn */
+.auth-btn--secondary {
+  background: var(--bg-secondary) !important;
+  border: 1.5px solid var(--border-muted) !important;
+  color: var(--text-secondary) !important;
+  box-shadow: none !important;
+}
+
+.auth-btn--secondary:hover {
+  background: #e8e4dc !important;
+  color: var(--text-primary) !important;
+  box-shadow: none !important;
+  transform: translateY(-1px);
+}
 
 
 /* ══════════════════════════════════════════════════════════
